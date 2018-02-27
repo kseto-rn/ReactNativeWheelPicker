@@ -8,3 +8,9 @@ build/
 .gradle
 local.properties
 *.iml
+
+# backup files
+*~
+*.swp
+*.bak
+*.orig

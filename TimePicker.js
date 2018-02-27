@@ -150,9 +150,8 @@ const dateTo12Hour = (dateString) => {
 
 function getHoursArray(format24) {
   const arr = [];
-  const min = format24 ? 0 : 1;
-  const max = format24 ? 23 : 12;
-  for (let i = min; i <= max; i++) {
+  const hours = format24 ? {min:0, max:23} : {min:1, max:12};
+  for (let i = hours.min; i <= hours.max; i++) {
     arr.push(('00'+i).slice(-2));
   }
   return arr;
