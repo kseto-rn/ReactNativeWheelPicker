@@ -1,28 +1,71 @@
-import React from 'react';
-import {
-  View,
-  StyleSheet,
-} from 'react-native';
-import WheelPicker from './WheelPicker';
-import moment from 'moment';
-import PropTypes from 'prop-types';
+/**
+ * @prettier
+ * @flow
+ * */
 
-class TimePicker extends React.Component {
-  constructor(props) {
-    super(props);
-    this.selectedDate = this.props.initDate ? new Date(this.props.initDate) : new Date();
-    const time12format = hourTo12Format(this.selectedDate.getHours());
-    const time24format = this.selectedDate.getHours();
-    this.hours = this.props.hours ? this.props.hours : getHoursArray(this.props.format24);
-    this.minutes = this.props.minutes ? this.props.minutes : getFiveMinutesArray();
-    this.initHourInex = this.props.format24 ? time24format : time12format[0] - 1;
-    const minutesCount = this.props.minutes ? this.props.minutes.length : 12
-    const minutesInHour = 60
-    this.initMinuteInex = Math.round(this.selectedDate.getMinutes() / (minutesInHour / minutesCount));
-    this.initAmInex = time12format[1] === 'AM' ? 0 : 1;
+import React from 'react'
+import { View, StyleSheet } from 'react-native'
+import WheelPicker from './WheelPicker'
+import {
+  hourTo24Format,
+  hourTo12Format,
+  getHoursArray,
+  getFiveMinutesArray,
+  getAmArray,
+} from './Utils'
+
+const AM = 'AM'
+const HOUR = 60
+
+type Event = {
+  data: string | number,
+  position: number,
+}
+
+type Props = {
+  initDate: string,
+  onTimeSelected: Date => void,
+  hours: Array<number>,
+  minutes: Array<string>,
+  format24: boolean,
+}
+
+type State = {
+  selectedDate: Date,
+  hours: Array<number>,
+  minutes: Array<string>,
+  initHourInex: number,
+  initMinuteInex: number,
+  initAmInex: number,
+}
+
+export default class TimePicker extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props)
+    const { initDate, format24, minutes } = props
+    const selectedDate = initDate ? new Date(initDate) : new Date()
+    const time12format = hourTo12Format(selectedDate.getHours())
+    const time24format = selectedDate.getHours()
+    const hours = this.props.hours || getHoursArray(format24)
+    const initHourInex = format24 ? time24format : Number(time12format[0]) - 1
+    const minutesCount = minutes ? minutes.length : 12
+
+    const initMinuteInex = Math.round(
+      selectedDate.getMinutes() / (HOUR / minutesCount)
+    )
+    const initAmInex = time12format[1] === AM ? 0 : 1
+    this.state = {
+      selectedDate,
+      hours,
+      minutes: minutes || getFiveMinutesArray(),
+      initHourInex,
+      initMinuteInex,
+      initAmInex,
+    }
   }
 
   render() {
+    const { hours, initHourInex, minutes, initMinuteInex } = this.state
     return (
       <View style={styles.container}>
         <WheelPicker
@@ -31,10 +74,10 @@ class TimePicker extends React.Component {
           isCyclic
           isCurved
           visibleItemCount={6}
-          data={this.hours}
+          data={hours}
           selectedItemTextColor={'black'}
-          onItemSelected={data => this.onHourSelected(data)}
-          selectedItemPosition={this.initHourInex}
+          onItemSelected={this.onHourSelected}
+          selectedItemPosition={initHourInex}
         />
         <WheelPicker
           style={styles.wheelPicker}
@@ -42,72 +85,66 @@ class TimePicker extends React.Component {
           isCyclic
           isCurved
           visibleItemCount={6}
-          data={this.minutes}
+          data={minutes}
           selectedItemTextColor={'black'}
-          onItemSelected={data => this.onMinuteSelected(data)}
-          selectedItemPosition={this.initMinuteInex}
+          onItemSelected={this.onMinuteSelected}
+          selectedItemPosition={initMinuteInex}
         />
-        {this.renderAm()}
+        {!this.props.format24 && this.renderAm()}
       </View>
-    );
+    )
   }
 
   renderAm() {
-    if (!this.props.format24) {
-      return (
-        <WheelPicker
-          style={styles.wheelPicker}
-          isAtmospheric
-          isCurved
-          visibleItemCount={8}
-          data={getAmArray()}
-          selectedItemTextColor={'black'}
-          onItemSelected={data => this.onAmSelected(data)}
-          selectedItemPosition={this.initAmInex}
-        />
-      );
-    }
+    const { initAmInex } = this.state
+    return (
+      <WheelPicker
+        style={styles.wheelPicker}
+        isAtmospheric
+        isCurved
+        visibleItemCount={8}
+        data={getAmArray()}
+        selectedItemTextColor={'black'}
+        onItemSelected={this.onAmSelected}
+        selectedItemPosition={initAmInex}
+      />
+    )
   }
 
-  onHourSelected(event) {
+  onHourSelected = (event: Event) => {
+    const selectedDate = this.state.selectedDate
     if (this.props.format24) {
-      this.selectedDate.setHours(event.data);
+      selectedDate.setHours(Number(event.data))
     } else {
-      const time12format = hourTo12Format(this.selectedDate.getHours());
-      const newTime12Format = `${event.data} ${time12format[1]}`;
-      const selectedHour24format = hourTo24Format(newTime12Format);
-      this.selectedDate.setHours(selectedHour24format);
+      const time12format = hourTo12Format(selectedDate.getHours())
+      const newTime12Format = `${event.data} ${time12format[1]}`
+      const selectedHour24format = hourTo24Format(newTime12Format)
+      selectedDate.setHours(selectedHour24format)
     }
-    this.onTimeSelected();
+    this.onTimeSelected(selectedDate)
   }
 
-  onMinuteSelected(event) {
-    this.selectedDate.setMinutes(event.data);
-    this.onTimeSelected();
+  onMinuteSelected = (event: Event) => {
+    const selectedDate = this.state.selectedDate
+    selectedDate.setMinutes(Number(event.data))
+    this.onTimeSelected(selectedDate)
   }
 
-  onAmSelected(event) {
-    const time12format = hourTo12Format(this.selectedDate.getHours());
-    const newTime12Format = `${time12format[0]} ${event.data}`;
-    const selectedHour24format = hourTo24Format(newTime12Format);
-    this.selectedDate.setHours(selectedHour24format);
-    this.onTimeSelected();
+  onAmSelected = (event: Event) => {
+    const selectedDate = this.state.selectedDate
+    const time12format = hourTo12Format(selectedDate.getHours())
+    const newTime12Format = `${time12format[0]} ${event.data}`
+    const selectedHour24format = hourTo24Format(newTime12Format)
+    selectedDate.setHours(selectedHour24format)
+    this.onTimeSelected(selectedDate)
   }
 
-  onTimeSelected() {
+  onTimeSelected(selectedDate: Date) {
     if (this.props.onTimeSelected) {
-      this.props.onTimeSelected(this.selectedDate);
+      this.props.onTimeSelected(selectedDate)
     }
   }
 }
-
-TimePicker.propTypes = {
-  initDate: PropTypes.string,
-  onTimeSelected: PropTypes.func,
-  hours: PropTypes.array,
-  minutes: PropTypes.array,
-  format24: PropTypes.bool,
-};
 
 const styles = StyleSheet.create({
   container: {
@@ -120,57 +157,4 @@ const styles = StyleSheet.create({
     width: null,
     flex: 1,
   },
-});
-
-// it takes in format '12 AM' and return 24 format
-function hourTo24Format(hour) {
-  return parseInt(moment(hour, ['h A']).format('H'), 10);
-}
-
-// it takes in format 23 and return [11,'PM'] format
-function hourTo12Format(hour) {
-  const currDate = new Date();
-  currDate.setHours(hour);
-  return dateTo12Hour(currDate.toISOString());
-}
-
-const dateTo12Hour = (dateString) => {
-  const localDate = new Date(dateString);
-  let hour = localDate.getHours();
-  if (hour === 12) {
-    return [('12'), ('PM')];
-  } if (hour === 0) {
-    return [('12'), ('AM')];
-  }
-  const afterMidday = hour % 12 === hour;
-  hour = afterMidday ? hour : hour % 12;
-  const amPm = afterMidday ? 'AM' : 'PM';
-  return [(hour.toString()), (amPm)];
-};
-
-function getHoursArray(format24) {
-  const arr = [];
-  const hours = format24 ? {min:0, max:23} : {min:1, max:12};
-  for (let i = hours.min; i <= hours.max; i++) {
-    arr.push(('00'+i).slice(-2));
-  }
-  return arr;
-}
-
-function getFiveMinutesArray() {
-  const arr = [];
-  arr.push('00');
-  arr.push('05');
-  for (let i = 10; i < 60; i += 5) {
-    arr.push(`${i}`);
-  }
-  return arr;
-}
-
-function getAmArray() {
-  const arr = [];
-  arr.push('AM');
-  arr.push('PM');
-  return arr;
-}
-module.exports = TimePicker;
+})
