@@ -1,6 +1,6 @@
-import WheelPicker from './WheelPicker';
-import TimePicker from './TimePicker';
-import DatePicker from './DatePicker';
+import WheelPicker from './src/WheelPicker';
+import TimePicker from './src/TimePicker';
+import DatePicker from './src/DatePicker';
 
 
 export {

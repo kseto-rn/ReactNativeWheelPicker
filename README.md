@@ -75,7 +75,7 @@ module.exports = MyPickers;
 
 ## Wheel Picker
 
-![](./src/wheelPicker.gif)
+![](./doc/wheelPicker.gif)
 
 ```js
 
@@ -129,7 +129,7 @@ Callback with event in the form `event = { data: 1, position: 0 }`
 
 ## Time Picker
 
-![](./src/timePicker.gif)
+![](./doc/timePicker.gif)
 
 ```js
 
@@ -164,7 +164,7 @@ Callback with event in the form `event = { data: 1, position: 0 }`
 
 ## Date Picker
 
-![](./src/datePicker.gif)
+![](./doc/datePicker.gif)
 
 ```js
 
